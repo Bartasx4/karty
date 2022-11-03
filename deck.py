@@ -1,6 +1,29 @@
 import random
 
 
+class Card:
+
+	def __init__(self, value, color, points):
+		self.value = value
+		self.color = color
+		self.points = points
+
+	def __lt__(self, other):
+		return self.points < other.points
+
+	def __le__(self, other):
+		return self.points <= other.points
+
+	def __eq__(self, other):
+		return self.points == other.points
+
+	def __ge__(self, other):
+		return self.points >= other.points
+
+	def __repr__(self):
+		return f'({self.value}, {self.color})'
+
+
 class Deck:
 	
 	def __init__(self):
@@ -18,6 +41,10 @@ class Deck:
 		else:
 			self.deck = [card] + self.deck
 
+	@property
+	def card(self):
+		return self.pop()
+
 	def clear(self):
 		self.deck = []
 		
@@ -25,7 +52,11 @@ class Deck:
 		return self.pop()
 		
 	def new_deck(self):
-		self.deck = [(value, color) for _ in range(self.deck_count) for value in self.values for color in self.colors]
+		for _ in range(self.deck_count):
+			for value in self.values:
+				for color in self.colors:
+					points = self.points[self.values.index(value)]
+					self.deck.append(Card(value, color, points))
 		return self
 		
 	def pop(self):
@@ -36,7 +67,11 @@ class Deck:
 		self.values = values if values else self.values
 		self.deck_count = decks
 
-	def show(self, columns=6):
+	@property
+	def last(self):
+		return self.deck[-1]
+
+	def print_all(self, columns=6):
 		for i, card in enumerate(self.deck):
 			print(card, end=', ')
 			if (i+1) % columns == 0:
@@ -50,6 +85,9 @@ class Deck:
 		self.deck = self.deck + other.deck
 		return self
 
+	def __getitem__(self, item):
+		return self.deck[item]
+
 	def __iter__(self):
 		return self
 		
@@ -61,12 +99,3 @@ class Deck:
 			
 	def __repr__(self):
 		return '\n'.join([str(card) for card in self.deck])
-	
-			
-if __name__ == '__main__':
-	d = Deck()
-	d.set(decks=1, values=[2], colors=['S', 'D', 'P', 'K'])
-	d.new_deck()
-	d.add(('A', 'S'))
-	d.shuffle()
-	print(d)
