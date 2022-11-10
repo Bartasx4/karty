@@ -34,24 +34,25 @@ class Deck:
         self.deck_count = 1
         self.special = []
         self.deck = []
-        self.table = None
 
-    def add(self, card):
-        if isinstance(card, Deck):
-            self.deck += card.deck
+    def add(self, to_add):
+        if isinstance(to_add, Deck):
+            self.deck += to_add.deck
         else:
-            self.deck = [card] + self.deck
+            self.deck = [to_add] + self.deck
 
-    @property
-    def card(self):
-        return self.pop()
+    def check_lowest_card(self):
+        lowest = 99
+        lowest_deck = Deck()
+        for card in self.deck:
+            lowest = card.points if card.points < lowest else lowest
+        for card in self.deck:
+            if card.points == lowest:
+                lowest_deck.add(card)
+        return lowest_deck
 
     def clear(self):
         self.deck = []
-        self.table = None
-
-    def clear_table(self):
-        self.table = None
 
     @property
     def count(self) -> int:
@@ -59,23 +60,6 @@ class Deck:
 
     def create_stack(self, name):
         self.__setattr__(name, Deck())
-
-    def create_table(self, *args, empty=True):
-        self.table = Deck()
-        if empty:
-            return
-        if len(args) == 1:
-            if isinstance(args[0], list):
-                self.create_table(args[0])
-                return
-            if isinstance(args[0], Card):
-                self.table.add(args[0])
-                return
-            raise TypeError("Element is not a Card object")
-        for card in args:
-            if not isinstance(card, Card):
-                raise TypeError(f'Element is not a Card object. {card}, bad type')
-            self.table.add(card)
 
     @property
     def empty(self):
@@ -109,15 +93,17 @@ class Deck:
             for value in self.values:
                 for color in self.colors:
                     points = self.points[self.values.index(value)]
-                    self.deck.append(Card(value, color, points))
+                    card = Card(value, color, points)
+                    self.deck.append(card)
         return self
 
     def pop(self, index=-1):
         return self.deck.pop(index)
 
-    def set(self, decks=1, colors=None, values=None):
+    def set(self, decks=1, colors=None, values=None, points=None):
         self.colors = colors if colors else self.colors
         self.values = values if values else self.values
+        self.points = points if points else self.points
         self.deck_count = decks
 
     @property
@@ -162,7 +148,8 @@ class Deck:
         return self.deck.__iter__()
 
     def __next__(self):
-        return self.deck.__next__()
+        pass
+        # return self.deck.__next__()
 
 # def __repr__(self):
 # return '\n'.join([str(card) for card in self.deck])
