@@ -25,6 +25,7 @@ class Card:
 
 
 class Deck:
+    SPECIAL = {'values': [], 'colors': ''}
 
     def __init__(self):
         random.seed()
@@ -32,7 +33,7 @@ class Deck:
         self.values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'D', 'K', 'A']
         self.points = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         self.deck_count = 1
-        self.special = []
+        self.special = {'values': [], 'colors': []}
         self.deck = []
 
     def add(self, to_add):
@@ -88,6 +89,17 @@ class Deck:
                 return self.pop(index)
         return False
 
+    def is_special(self, card):
+        special_values = True if Deck().SPECIAL['values'] else False
+        special_color = True if Deck().SPECIAL['colors'] else False
+        if special_values:
+            if card.value in Deck().SPECIAL['values']:
+                if (special_color and card.color in Deck().SPECIAL['color']) or not special_color:
+                    return True
+        if special_color and card.color in Deck().SPECIAL['colors']:
+            return True
+        return False
+
     def new_deck(self):
         for _ in range(self.deck_count):
             for value in self.values:
@@ -138,7 +150,7 @@ class Deck:
         return False
 
     def __add__(self, other):
-        self.deck = self.deck + other.deck
+        self.deck = self.deck + other.dealer
         return self
 
     def __getitem__(self, index):
@@ -150,6 +162,3 @@ class Deck:
     def __next__(self):
         pass
         # return self.deck.__next__()
-
-# def __repr__(self):
-# return '\n'.join([str(card) for card in self.deck])

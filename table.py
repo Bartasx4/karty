@@ -5,24 +5,25 @@ from player import Player
 
 class Table:
 
-    def __init__(self):
+    def __init__(self, players=None, bot_count=3):
         values = [0, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14]
-        self.players = []
-        self.deck = Deck()
+        self.phase = 'start'  # start, main, end
+        Deck().SPECIAL['values'] = ['2', '10']
+        self.players: list[Player] = players if players else []
+        self.__create_players(bot_count)
+        self.dealer = Deck()
         self.table = Deck()
         self.special = Deck()
         self.special.set(values=['2', '10'])
         self.special.new_deck()
-        self.deck.set(values=values)
+        self.dealer.set(values=values)
 
-    def start(self, players=None, bot_count=3):
-        self.deck = Deck()
-        self.deck.new_deck().shuffle()
-        players = players if players else []
-        self.__create_players(bot_count)
-        self.players += players
+    def start(self):
+        self.dealer = Deck()
+        self.dealer.new_deck().shuffle()
         random.shuffle(self.players)
         self.__split_cards()
+        self.__start_phase()
         self.__game_loop()
 
     def __check_win(self):
@@ -34,12 +35,11 @@ class Table:
                 return player
         return False
 
-    def __create_players(self, players_count):
-        self.players = []
-        human = Player(dealer_deck=self.deck, table_deck=self.table, nick='Bartek', computer=False)
-        self.players.append(human)
-        for i in range(players_count):
-            bot = Player(dealer_deck=self.deck, table_deck=self.table, nick=f'{i + 1}', computer=True)
+    def __create_players(self, bots_count=4):
+        for player in self.players:
+            player.table = self
+        for i in range(bots_count):
+            bot = Player(table=self, nick=f'Bot_{i + 1}', computer=True)
             self.players.append(bot)
 
     def __end_game(self):
@@ -67,7 +67,10 @@ class Table:
             stacks = [player.hand_deck, player.up_deck, player.down_deck]
             for player_deck in stacks:
                 for _ in range(3):
-                    player_deck.add(self.deck.get())
+                    player_deck.add(self.dealer.get())
 
     def __start_phase(self):
-        pass
+        self.phase = 'start'
+        for player in self.players:
+            player.move()
+        self.phase = 'main'
