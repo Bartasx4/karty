@@ -1,10 +1,10 @@
-from player import Player
 
 
 class Interface:
 
-    def __init__(self, player: Player):
+    def __init__(self, player, table):
         self.player = player
+        self.table = table
 
     def move(self):
-        pass
+        return self.table

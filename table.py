@@ -6,7 +6,7 @@ from player import Player
 class Table:
 
     def __init__(self, players=None, bot_count=3):
-        values = [0, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14]
+        points = [0, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14]
         self.phase = 'start'  # start, main, end
         Deck().SPECIAL['values'] = ['2', '10']
         self.players: list[Player] = players if players else []
@@ -16,7 +16,7 @@ class Table:
         self.special = Deck()
         self.special.set(values=['2', '10'])
         self.special.new_deck()
-        self.dealer.set(values=values)
+        self.dealer.set(points=points)
 
     def start(self):
         self.dealer = Deck()
@@ -50,6 +50,8 @@ class Table:
             while player.move():
                 if self.__check_win():
                     return self.__end_game()
+                if self.__last_four():
+                    self.table.clear()
 
     def __last_four(self):
         if self.table.count < 4:

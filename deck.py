@@ -153,11 +153,17 @@ class Deck:
         self.deck = self.deck + other.dealer
         return self
 
+    def __get__(self, instance, owner):
+        return False
+
     def __getitem__(self, index):
         return self.deck[index]
 
     def __iter__(self):
         return self.deck.__iter__()
+
+    def __len__(self):
+        return self.count
 
     def __next__(self):
         pass
