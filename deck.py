@@ -3,10 +3,11 @@ import random
 
 class Card:
 
-    def __init__(self, value: str, color: str, points: int):
+    def __init__(self, value: str, color: str, points: int, special=True):
         self.value = value
         self.color = color
         self.points = points
+        self.special = special
 
     def __lt__(self, other):
         return self.points < other.points
@@ -33,7 +34,7 @@ class Deck:
         self.values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'D', 'K', 'A']
         self.points = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         self.deck_count = 1
-        self.special = {'values': [], 'colors': []}
+        self.specials = []
         self.deck = []
 
     def add(self, to_add):
@@ -105,17 +106,19 @@ class Deck:
             for value in self.values:
                 for color in self.colors:
                     points = self.points[self.values.index(value)]
-                    card = Card(value, color, points)
+                    special = f'({value}, {color})' in self.specials
+                    card = Card(value, color, points, special)
                     self.deck.append(card)
         return self
 
     def pop(self, index=-1):
         return self.deck.pop(index)
 
-    def set(self, decks=1, colors=None, values=None, points=None):
+    def set(self, decks=1, colors=None, values=None, points=None, specials: list[str]=None):
         self.colors = colors if colors else self.colors
         self.values = values if values else self.values
         self.points = points if points else self.points
+        self.specials = specials if specials else []
         self.deck_count = decks
 
     @property

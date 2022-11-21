@@ -25,8 +25,9 @@ class AI:
                 return self.__put_on_table(down_deck)
 
         if self.__put_on_table(hand_deck): return True
-        elif self.__put_on_table(up_deck): return True
-        elif self.__put_on_table(down_deck): return True
+        if self.__put_on_table(up_deck): return True
+        if self.__put_on_table(down_deck): return True
+        if self.__play_down_deck(): return True
         return self.__last_chance()
 
     def __swap_cards(self):
@@ -72,6 +73,17 @@ class AI:
         self.table.table.add(cards_to_deal)
         return True
 
-    def __put_on_table_down(self):
-        deck = self.player.down_deck
-
+    def __play_down_deck(self):
+        if self.player.hand_deck.count == 0 and \
+        	self.player.up_deck.count == 0:
+        	pass
+        down_deck = self.player.down_deck
+        hand_deck = self.player.hand_deck
+        table_deck = self.table.table
+        card = choice(down_deck)
+        if card > self.table.table_deck.last:
+        	self.table.add(down_deck.get_card(card))
+        	return True
+        hand_deck.add(down_deck.get_card(card))
+        hand_deck.add(table_deck)
+        table_deck.clear()

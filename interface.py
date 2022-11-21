@@ -1,10 +1,10 @@
+from table import Table
 
 
 class Interface:
 
-    def __init__(self, player, table):
-        self.player = player
-        self.table = table
+    def __init__(self):
+        self.table = Table()
 
-    def move(self):
-        return self.table
+    def add_player(nick):
+    	
