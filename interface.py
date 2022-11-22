@@ -7,4 +7,4 @@ class Interface:
         self.table = Table()
 
     def add_player(nick):
-    	
+        pass

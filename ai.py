@@ -1,10 +1,11 @@
 from deck import Deck
+from player import Player
 from random import choice
 
 
 class AI:
 
-    def __init__(self, player, table):
+    def __init__(self, player: Player, table):
         self.player = player
         self.table = table
 
@@ -38,9 +39,9 @@ class AI:
             changing = False
             for hand_card in hand_deck:
                 for up_card in up_deck:
-                    if (hand_card > up_card or Deck().is_special(hand_card)) and (not Deck().is_special(up_card)):
-                        hand_deck.add(up_deck.get_card(up_card))
-                        up_deck.add(hand_deck.get_card(hand_card))
+                    if (hand_card > up_card or hand_card.special) and (not up_card.special):
+                        hand_deck.add(up_deck.get_by_card(up_card))
+                        up_deck.add(hand_deck.get_by_card(hand_card))
                         changing = True
                         break
                 if changing:
@@ -50,7 +51,7 @@ class AI:
     def __last_chance(self):
         hand_deck = self.player.hand_deck
         if not self.table.dealer.empty:
-            if last_chance_card := self.table.dealer.get() >= self.table.table.last:
+            if last_chance_card := self.table.dealer.draw() >= self.table.table.last:
                 self.table.table.add(last_chance_card)
                 return True
             hand_deck.add(last_chance_card)
@@ -63,10 +64,10 @@ class AI:
         if not cards_can_dealt:
             return False
         cards_to_deal = Deck()
-        cards_to_deal.add(player_deck.get_card(cards_can_dealt[0]))
+        cards_to_deal.add(player_deck.get_by_card(cards_can_dealt[0]))
         while True:
             if cards_can_dealt and Deck().is_same_dict(cards_to_deal[0], cards_can_dealt[0])['value']:
-                cards_to_deal.add(player_deck.get_card(cards_can_dealt[0]))
+                cards_to_deal.add(player_deck.get_by_card(cards_can_dealt[0]))
                 self.player.take_cards()
             else:
                 break
@@ -75,15 +76,15 @@ class AI:
 
     def __play_down_deck(self):
         if self.player.hand_deck.count == 0 and \
-        	self.player.up_deck.count == 0:
-        	pass
+                self.player.up_deck.count == 0:
+            pass
         down_deck = self.player.down_deck
         hand_deck = self.player.hand_deck
         table_deck = self.table.table
         card = choice(down_deck)
         if card > self.table.table_deck.last:
-        	self.table.add(down_deck.get_card(card))
-        	return True
-        hand_deck.add(down_deck.get_card(card))
+            self.table.add(down_deck.get_by_card(card))
+            return True
+        hand_deck.add(down_deck.get_by_card(card))
         hand_deck.add(table_deck)
         table_deck.clear()
