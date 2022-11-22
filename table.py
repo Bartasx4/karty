@@ -1,26 +1,30 @@
 import random
-from deck import Deck
+from typing import Dict, Optional
 from deck import Card
-from player import Player
+from deck import errors
+from deck import Deck
+from deck import Player
+from deck.deck import is_same_dict
 
 
 class Table:
 
-    def __init__(self, bot_count=3):
+    def __init__(self):
         points = [0, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14]
+        self.players: Dict[int:Player] = {}
         self.phase = 'start'  # start, main, end
-        self.players = {}
         self.turn_id = 0
-        self.bot_count = bot_count
         self.dealer = Deck()
         self.__create_special_cards()
         self.game_started = False
         self.table = Deck()
         self.dealer.set(points=points)
 
-    def create_player(self, nick):
+    def add_player(self, nick, computer=True):
         id_ = len(self.players)
-        self.players[id_] = Player(nick, False)
+        self.players[id_] = Player(nick, computer=computer)
+        self.players[id_].add_deck('up_hand', hidden=False)
+        self.players[id_].add_deck('down_hand', hidden=True)
 
     def game_status(self):
         return {'turn_id': self.turn_id,
@@ -51,12 +55,10 @@ class Table:
         if isinstance(put_card, Card):
             put_card = [put_card]
 
-
-
     def swap_card(self, player_id, hand_card: Card, up_card: Card):
         player = self.players[player_id]
-        player.hand_deck.add(player.up_deck.get_by_card(up_card))
-        player.up_deck.add(player.hand_deck.get_by_card(hand_card))
+        player.hand_deck.add(player.up_deck.draw_by_card(up_card))
+        player.up_deck.add(player.hand_deck.draw_by_card(hand_card))
 
     def __can_deal_card(self, card) -> bool:
         if card >= self.table.last or card.special:
@@ -100,7 +102,7 @@ class Table:
         last_cards = self.table[-4:]
         last_one = self.table.last
         for card in last_cards:
-            same = Deck().is_same_dict(card, last_one)['value']
+            same = is_same_dict(card, last_one)['value']
             if not same:
                 return False
             self.table.clear()

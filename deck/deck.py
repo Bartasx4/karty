@@ -1,5 +1,9 @@
+import logging
 import random
-from typing import List, Optional
+from typing import List
+from .errors import *
+
+log = logging.getLogger('deck')
 
 
 class Card:
@@ -30,45 +34,35 @@ class Card:
 
 
 class Deck:
-    _SPECIALS: list[Card] = []
-de
+    _SPECIALS: List[Card] = []
+
     def __init__(self):
         random.seed()
+        self._points = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         self._suits = ['heart', 'diamonds', 'spades', 'clubs']
         self._suits = ['♡', '♢', '♠', '♣']
-        self.values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'D', 'K', 'A']
-        self.points = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-        self.deck_count = 1
+        self._values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'D', 'K', 'A']
         self.deck = []
-        self.discard_pile: list[Card] = []
+        self.deck_count = 1
+        self.discard_pile: List[Card] = []
 
-    def add(self, to_add):
+    def add(self, to_add: Card):
         if isinstance(to_add, Deck):
             self.deck += to_add.deck
         else:
             self.deck = [to_add] + self.deck
 
-    def add_special_cards(self, cards: list[Card]):
+    def add_special_cards(self, cards: List[Card]):
         if isinstance(cards, Card):
             cards = [cards]
         for add_card in cards:
             self._SPECIALS.append(add_card)
 
-    def check_lowest_card(self):
-        lowest = 99
-        lowest_deck = Deck()
-        for card in self.deck:
-            lowest = card.points if card.points < lowest else lowest
-        for card in self.deck:
-            if card.points == lowest:
-                lowest_deck.add(card)
-        return lowest_deck
-
     def clear(self):
         self.deck = []
 
     @property
-    def suits(self) -> list[str]:
+    def suits(self) -> List[str]:
         return self._suits
 
     @property
@@ -87,46 +81,48 @@ de
             return self.deck[0]
         raise IndexError("Can't get a first card. The deck is empty.")
 
-    def draw(self, index=-1):
+    def draw(self, index=-1) -> Card:
         return self.pop(index)
 
-    def get_by_card(self, card_to_find: Card):
+    def draw_by_card(self, card_to_find: Card) -> Card or False:
         for index, card_deck in enumerate(self.deck):
-            if self.is_same(card_deck, card_to_find):
+            if is_same(card_deck, card_to_find):
                 return self.pop(index)
         return False
 
-    def get_card_by_value(self, card_to_find):
+    def draw_by_value(self, card_to_find: Card) -> Card or False:
         for index, card_deck in enumerate(self.deck):
-            if self.is_same_dict(card_deck, card_to_find)['value']:
+            if is_same_dict(card_deck, card_to_find)['value']:
                 return self.pop(index)
         return False
 
     def new_deck(self):
         for _ in range(self.deck_count):
-            for value in self.values:
+            for value in self._values:
                 for color in self._suits:
-                    points = self.points[self.values.index(value)]
+                    points = self._points[self._values.index(value)]
                     card = Card(value, color, points)
                     if self.__is_special(card):
                         card.set_special()
                     self.deck.append(card)
+        log.info('A new deck created.')
         return self
 
     def pop(self, index=-1):
         return self.deck.pop(index)
 
     def set(self, decks=1,
-            colors: list[str] = None,
-            values: list[str] = None,
-            points: list[int] = None,
-            specials: list[str] = None
+            colors: List[str] = None,
+            values: List[str] = None,
+            points: List[int] = None,
+            specials: List[str] = None
             ):
         self._suits = colors if colors else self._suits
-        self.values = values if values else self.values
-        self.points = points if points else self.points
+        self._values = values if values else self._values
+        self._points = points if points else self._points
         self._SPECIALS = specials if specials else []
         self.deck_count = decks
+        log.info('New config for deck.')
 
     @property
     def last(self) -> Card:
@@ -147,21 +143,9 @@ de
     def sort(self, format_):
         pass
 
-    def is_same_dict(self, card1: Card, card2: Card) -> dict[str:bool]:
-        result = {'value': card1.value == card2.value,
-                  'color': card1.suit == card2.suit,
-                  'points': card1.points == card2.points}
-        return result
-
-    def is_same(self, card1: Card, card2: Card) -> bool:
-        is_same = self.is_same_dict(card1, card2)
-        if all([is_same['value'], is_same['color'], is_same['points']]):
-            return True
-        return False
-
     def __is_special(self, special_card: Card) -> bool:
         for card in self._SPECIALS:
-            compare = self.is_same_dict(special_card, card)
+            compare = is_same_dict(special_card, card)
             if compare['color'] and compare['value']:
                 return True
         return False
@@ -191,3 +175,17 @@ de
     def __next__(self):
         pass
         # return self.deck.__next__()
+
+
+def is_same(card1: Card, card2: Card) -> bool:
+    is_same_ = is_same_dict(card1, card2)
+    if all([is_same_['value'], is_same_['color'], is_same_['points']]):
+        return True
+    return False
+
+
+def is_same_dict(card1: Card, card2: Card) -> dict[str:bool]:
+    result = {'value': card1.value == card2.value,
+              'color': card1.suit == card2.suit,
+              'points': card1.points == card2.points}
+    return result

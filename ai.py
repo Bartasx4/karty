@@ -1,5 +1,5 @@
 from deck import Deck
-from player import Player
+from deck.player import Player
 from random import choice
 
 
@@ -40,8 +40,8 @@ class AI:
             for hand_card in hand_deck:
                 for up_card in up_deck:
                     if (hand_card > up_card or hand_card.special) and (not up_card.special):
-                        hand_deck.add(up_deck.get_by_card(up_card))
-                        up_deck.add(hand_deck.get_by_card(hand_card))
+                        hand_deck.add(up_deck.draw_by_card(up_card))
+                        up_deck.add(hand_deck.draw_by_card(hand_card))
                         changing = True
                         break
                 if changing:
@@ -64,10 +64,10 @@ class AI:
         if not cards_can_dealt:
             return False
         cards_to_deal = Deck()
-        cards_to_deal.add(player_deck.get_by_card(cards_can_dealt[0]))
+        cards_to_deal.add(player_deck.draw_by_card(cards_can_dealt[0]))
         while True:
             if cards_can_dealt and Deck().is_same_dict(cards_to_deal[0], cards_can_dealt[0])['value']:
-                cards_to_deal.add(player_deck.get_by_card(cards_can_dealt[0]))
+                cards_to_deal.add(player_deck.draw_by_card(cards_can_dealt[0]))
                 self.player.take_cards()
             else:
                 break
@@ -83,8 +83,8 @@ class AI:
         table_deck = self.table.table
         card = choice(down_deck)
         if card > self.table.table_deck.last:
-            self.table.add(down_deck.get_by_card(card))
+            self.table.add(down_deck.draw_by_card(card))
             return True
-        hand_deck.add(down_deck.get_by_card(card))
+        hand_deck.add(down_deck.draw_by_card(card))
         hand_deck.add(table_deck)
         table_deck.clear()
