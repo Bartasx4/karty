@@ -1,8 +1,8 @@
-from deck import Card
-from deck import Deck
+from table import Table
 
 
-if __name__ == '__main__':
-    deck = Deck()
-    card = Card('A', 'Serce', 10)
-    deck.new_deck()
+table = Table()
+table.create_bots(4)
+table.start()
+player = table.players[0]
+

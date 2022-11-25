@@ -17,5 +17,5 @@ logging.config.fileConfig(log_file_path, disable_existing_loggers=False)
 
 from .errors import *
 from .deck import Deck
-from .deck import Card
+from .card import Card
 from .player import Player

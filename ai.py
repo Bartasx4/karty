@@ -40,8 +40,8 @@ class AI:
             for hand_card in hand_deck:
                 for up_card in up_deck:
                     if (hand_card > up_card or hand_card.special) and (not up_card.special):
-                        hand_deck.add(up_deck.draw_by_card(up_card))
-                        up_deck.add(hand_deck.draw_by_card(hand_card))
+                        hand_deck.add_card(up_deck.draw_by_card(up_card))
+                        up_deck.add_card(hand_deck.draw_by_card(hand_card))
                         changing = True
                         break
                 if changing:
@@ -51,12 +51,12 @@ class AI:
     def __last_chance(self):
         hand_deck = self.player.hand_deck
         if not self.table.dealer.empty:
-            if last_chance_card := self.table.dealer.draw() >= self.table.table.last:
-                self.table.table.add(last_chance_card)
+            if last_chance_card := self.table.dealer.draw() >= self.table.discard_pile.last:
+                self.table.discard_pile.add_card(last_chance_card)
                 return True
-            hand_deck.add(last_chance_card)
-        hand_deck.add(self.table.table)
-        self.table.table.clear()
+            hand_deck.add_card(last_chance_card)
+        hand_deck.add_card(self.table.discard_pile)
+        self.table.discard_pile.clear()
         return False
 
     def __put_on_table(self, player_deck: Deck):
@@ -64,14 +64,14 @@ class AI:
         if not cards_can_dealt:
             return False
         cards_to_deal = Deck()
-        cards_to_deal.add(player_deck.draw_by_card(cards_can_dealt[0]))
+        cards_to_deal.add_card(player_deck.draw_by_card(cards_can_dealt[0]))
         while True:
             if cards_can_dealt and Deck().is_same_dict(cards_to_deal[0], cards_can_dealt[0])['value']:
-                cards_to_deal.add(player_deck.draw_by_card(cards_can_dealt[0]))
+                cards_to_deal.add_card(player_deck.draw_by_card(cards_can_dealt[0]))
                 self.player.take_cards()
             else:
                 break
-        self.table.table.add(cards_to_deal)
+        self.table.discard_pile.add_card(cards_to_deal)
         return True
 
     def __play_down_deck(self):
@@ -80,11 +80,11 @@ class AI:
             pass
         down_deck = self.player.down_deck
         hand_deck = self.player.hand_deck
-        table_deck = self.table.table
+        table_deck = self.table.discard_pile
         card = choice(down_deck)
         if card > self.table.table_deck.last:
-            self.table.add(down_deck.draw_by_card(card))
+            self.table.add_card(down_deck.draw_by_card(card))
             return True
-        hand_deck.add(down_deck.draw_by_card(card))
-        hand_deck.add(table_deck)
+        hand_deck.add_card(down_deck.draw_by_card(card))
+        hand_deck.add_card(table_deck)
         table_deck.clear()

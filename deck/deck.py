@@ -1,36 +1,12 @@
 import logging
 import random
 from typing import List
-from .errors import *
+from .card import Card
+from .errors import DeckIsEmptyError
+from .errors import DeckIndexError
+from .errors import CardNotFoundError
 
 log = logging.getLogger('deck')
-
-
-class Card:
-
-    def __init__(self, value: str, color: str, points: int, special=True):
-        self.value = value
-        self.suit = color
-        self.points = points
-        self._special = special
-
-    def set_special(self):
-        self._special = True
-
-    def __lt__(self, other):
-        return self.points < other.points
-
-    def __le__(self, other):
-        return self.points <= other.points
-
-    def __eq__(self, other):
-        return self.points == other.points
-
-    def __ge__(self, other):
-        return self.points >= other.points
-
-    def __repr__(self):
-        return f'({self.value}, {self.suit})'
 
 
 class Deck:
@@ -39,35 +15,38 @@ class Deck:
     def __init__(self):
         random.seed()
         self._points = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-        self._suits = ['heart', 'diamonds', 'spades', 'clubs']
         self._suits = ['♡', '♢', '♠', '♣']
         self._values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'D', 'K', 'A']
-        self.deck = []
-        self.deck_count = 1
-        self.discard_pile: List[Card] = []
+        self._deck_count = 1
+        self._deck: List[Card] = []
+        self._discard_pile: List[Card] = []
 
-    def add(self, to_add: Card):
-        if isinstance(to_add, Deck):
-            self.deck += to_add.deck
-        else:
-            self.deck = [to_add] + self.deck
+    def add_card(self, card: Card):
+        self._deck = [card] + self._deck
 
-    def add_special_cards(self, cards: List[Card]):
-        if isinstance(cards, Card):
-            cards = [cards]
-        for add_card in cards:
-            self._SPECIALS.append(add_card)
-
-    def clear(self):
-        self.deck = []
-
-    @property
-    def suits(self) -> List[str]:
-        return self._suits
+    def add_deck(self, deck):
+        self._deck = self._deck + deck.deck
 
     @property
     def count(self) -> int:
         return int(len(self.deck))
+
+    @property
+    def deck(self):
+        return self._deck
+
+    @property
+    def discard_pile(self) -> List[Card]:
+        return self._discard_pile
+
+    def draw(self, index=0) -> Card:
+        return self.__pop(index)
+
+    def draw_by_card(self, card: Card) -> Card:
+        for index, card_deck in enumerate(self.deck):
+            if is_same(card_deck, card):
+                return self.__pop(index)
+        raise CardNotFoundError('Card not found {card=}.')
 
     @property
     def empty(self) -> bool:
@@ -75,41 +54,28 @@ class Deck:
             return False
         return True
 
+    def set_special_cards(self, cards: List[Card] or object):
+        if isinstance(cards, list):
+            self._SPECIALS = cards
+        elif isinstance(cards, Deck):
+            self._SPECIALS = [card for card in self.deck]
+
     @property
-    def first(self) -> Card:
-        if not self.empty:
-            return self.deck[0]
-        raise IndexError("Can't get a first card. The deck is empty.")
-
-    def draw(self, index=-1) -> Card:
-        return self.pop(index)
-
-    def draw_by_card(self, card_to_find: Card) -> Card or False:
-        for index, card_deck in enumerate(self.deck):
-            if is_same(card_deck, card_to_find):
-                return self.pop(index)
-        return False
-
-    def draw_by_value(self, card_to_find: Card) -> Card or False:
-        for index, card_deck in enumerate(self.deck):
-            if is_same_dict(card_deck, card_to_find)['value']:
-                return self.pop(index)
-        return False
+    def last(self) -> Card:
+        if self.empty:
+            raise DeckIsEmptyError('Deck is empty.')
+        return self.deck[0]
 
     def new_deck(self):
-        for _ in range(self.deck_count):
-            for value in self._values:
-                for color in self._suits:
-                    points = self._points[self._values.index(value)]
-                    card = Card(value, color, points)
-                    if self.__is_special(card):
-                        card.set_special()
-                    self.deck.append(card)
-        log.info('A new deck created.')
+        self.__new_deck()
         return self
 
-    def pop(self, index=-1):
-        return self.deck.pop(index)
+    def print_all(self, columns=6):
+        for i, card in enumerate(self.deck):
+            print(card, end=', ')
+            if (i + 1) % columns == 0:
+                print('')
+        print('')
 
     def set(self, decks=1,
             colors: List[str] = None,
@@ -121,27 +87,24 @@ class Deck:
         self._values = values if values else self._values
         self._points = points if points else self._points
         self._SPECIALS = specials if specials else []
-        self.deck_count = decks
-        log.info('New config for deck.')
-
-    @property
-    def last(self) -> Card:
-        if not self.empty:
-            return self.deck[-1]
-        raise Exception("Can't get a last card. The deck is empty.")
-
-    def print_all(self, columns=6):
-        for i, card in enumerate(self.deck):
-            print(card, end=', ')
-            if (i + 1) % columns == 0:
-                print('')
-        print('')
+        self._deck_count = decks
 
     def shuffle(self):
         random.shuffle(self.deck)
 
-    def sort(self, format_):
-        pass
+    @property
+    def suits(self) -> List[str]:
+        return self._suits
+
+    def __new_deck(self):
+        for _ in range(self._deck_count):
+            for value in self._values:
+                for color in self._suits:
+                    points = self._points[self._values.index(value)]
+                    card = Card(value, color, points)
+                    if self.__is_special(card):
+                        card.set_special()
+                    self.deck.append(card)
 
     def __is_special(self, special_card: Card) -> bool:
         for card in self._SPECIALS:
@@ -150,12 +113,19 @@ class Deck:
                 return True
         return False
 
+    def __pop(self, index=0):
+        if self.empty:
+            raise DeckIsEmptyError('Deck is empty.')
+        if index not in range(self.count):
+            raise DeckIndexError('deck index out of range')
+        return self._deck.pop(index)
+
     def __add__(self, other):
-        self.deck = self.deck + other.dealer
+        self._deck = self.deck + other.dealer
         return self
 
     def __contains__(self, card):
-        pass
+        self._deck.__contains__()
 
     def __delitem__(self, indice):
         pass
@@ -172,9 +142,8 @@ class Deck:
     def __len__(self):
         return self.count
 
-    def __next__(self):
-        pass
-        # return self.deck.__next__()
+    def __repr__(self):
+        return str(self.deck)
 
 
 def is_same(card1: Card, card2: Card) -> bool:
