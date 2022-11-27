@@ -1,9 +1,10 @@
-import random
 from typing import Dict
+from typing import List
 from deck import Card
 from deck import Deck
-from deck import Player
+from deck import PlayersGroup
 from deck import CantDealCardError
+from deck import NotYourTurnError
 from deck.deck import is_same_dict
 
 
@@ -11,9 +12,8 @@ class Table:
 
     def __init__(self):
         points = [0, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14]
-        self.players: Dict[int:Player] = {}
+        self.players = PlayersGroup()
         self.phase = 'start'  # start, main, end
-        self.turn_id = 0
         self.game_started = False
         self.dealer = Deck()
         self.discard_pile = Deck()
@@ -21,10 +21,7 @@ class Table:
         self.__create_special_cards()
 
     def add_player(self, nick: str, computer=True):
-        id_ = len(self.players)
-        self.players[id_] = Player(nick, computer=computer)
-        self.players[id_].create_deck('up_deck', hidden=False, max_cards=3, can_draw=False)
-        self.players[id_].create_deck('down_deck', hidden=True, max_cards=3, can_draw=False)
+        self.players.add_player(nick, computer=computer)
 
     def create_bots(self, bots_count=4):
         for i in range(bots_count):
@@ -37,26 +34,29 @@ class Table:
         card = self.players[player_id].get_deck(deck_name)[index]
         self.__deal_card(player_id, deck_name, card)
 
-    def end_turn(self):
-        self.__check()
-        self.turn_id += 1
-        if self.turn_id >= len(self.players):
-            self.turn_id = 0
+    def end_turn(self, player_id):
+        if player_id != self.whose_turn:
+        	raise NotYourTurnError('Wrong player.')
+        if self.__check_end(player_id):
+        	self.__end_player(player_id)
+        self.draw_cards(self.players.current)
+        if self.discard_pile.empty or self.discard_pile.last.special:
+            return False
+        return True
 
     @property
     def game_status(self) -> Dict[str, str]:
-        return {'turn_id': self.turn_id,
+        return {'turn_id': self.players.current,
                 'phase': self.phase,
                 'game_started': self.game_started
                 }
 
     @property
     def whose_turn(self) -> int:
-        return self.turn_id
+        return self.players.current
 
     def start(self):
-        self.turn_id = random.choice(list(self.players.keys()))
-        self.__reset_players()
+        self.players.reset()
         self.dealer = Deck()
         self.discard_pile = Deck()
         self.dealer.new_deck().shuffle()
@@ -106,14 +106,16 @@ class Table:
             return False
         return True
 
-    def __check_win(self) -> bool:
-        for id_, player in self.players.items():
-            empty = [player.hand_deck.count == 0,
-                     player.up_deck.count == 0,
-                     player.down_deck == 0]
-            if all(empty):
-                return id_
-        return False
+    def __check_end(self, player_id: int) -> bool:
+        player = self.players[player_id]
+        empty = [player.hand_deck.count == 0,
+                       player.up_deck.count == 0,
+                       player.down_deck == 0]
+        return all(empty)
+        
+    def _create_decks(self):
+        self.players.create_deck('up_deck', show_name='Up deck', hidden=False, max_cards=3, can_draw=False)
+        self.players.create_deck('down_deck', show_name='Down deck', hidden=True, max_cards=3, can_draw=False)
 
     def __create_special_cards(self):
         cards = []
@@ -126,11 +128,27 @@ class Table:
         player_deck = self.players[player_id].get_deck(deck_name)
         if self.discard_pile.last > card and not card.special:
             raise CantDealCardError('Can\'t deal card.')
-        self.discard_pile.add(player_deck.draw_by_card(card))
+        self.discard_pile.add_card(player_deck.draw_by_card(card))
+        if card.special:
+            self.__deal_special(card)
         return True
+    
+    def __deal_special(self, card):
+    	if card.value == '10':
+    		self.discard_pile.clear()
+    	if card.value == '2':
+    		pass
 
     def __end_game(self):
         self.game_started = False
+        
+    def __end_player(self, player_id):
+    	win = False if self.discard_pile.last.special else True
+    	if win:
+    		for index, value in enumerate(self.winners):
+    			if value == -1:
+    				self.winners[index] = player_id
+    				return
 
     def __last_four(self) -> bool:
         if self.discard_pile.count < 4:
@@ -144,12 +162,8 @@ class Table:
             self.discard_pile.clear()
         return True
 
-    def __reset_players(self):
-        for player in self.players.values():
-            player.reset()
-
     def __split_cards(self):
-        for player in self.players.values():
+        for player in self.players:
             stacks = [player.hand_deck, player.up_deck, player.down_deck]
             for player_deck in stacks:
                 for _ in range(3):

@@ -27,6 +27,9 @@ class Deck:
     def add_deck(self, deck):
         self._deck = self._deck + deck.deck
 
+    def clear(self):
+	    self._deck = []
+
     @property
     def count(self) -> int:
         return int(len(self.deck))
@@ -53,6 +56,27 @@ class Deck:
         if self.count > 0:
             return False
         return True
+        
+    def find(self, value: str = None, suit: str = None, points: int = None, special: bool = None, draw=False) -> List[Card]:
+    	found = []
+    	for index, card in enumerate(self.deck):
+    		if value:
+    			if card.value != value:
+    				continue
+    		if suit:
+    			if card.suit != suit:
+    				continue
+    		if points:
+    			if card.points != points:
+    				continue
+    		if special != None:
+    			if card.special != special:
+    				continue
+    		if draw:
+    			found.append(self.draw(index))
+    		else:
+    		    found.append(card)
+    	return found
 
     def set_special_cards(self, cards: List[Card] or object):
         if isinstance(cards, list):

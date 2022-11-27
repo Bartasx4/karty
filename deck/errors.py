@@ -10,6 +10,10 @@ class PlayerException(Exception):
 
 class RulesException(Exception):
     """ Base exception class for rules error. """
+    
+
+class NotYourTurnError(RulesException):
+	""" Anothers player turn. """
 
 
 class CantDealCardError(RulesException):
@@ -36,7 +40,7 @@ class NotACardError(DeckException):
     """ The object is not a Card. """
 
 
-class NotDrawableDeck(PlayerException):
+class NotDrawableDeckError(PlayerException):
     """ Player can't draw to this deck. """
 
 
@@ -44,5 +48,5 @@ class TooManyCardsError(PlayerException):
     """ Player can't draw more cards. """
 
 
-class WrongDeckName(PlayerException):
+class WrongDeckNameError(PlayerException):
     """ Wrong name of player's deck. """
