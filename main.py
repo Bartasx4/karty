@@ -1,8 +1,9 @@
 from table import Table
+import interface
+from ai import AI
 
 
 table = Table()
-table.create_bots(4)
+table.add_player('Bartek', interface.make_move, computer=False)
+table.create_bots(AI.make_move, 2)
 table.start()
-player = table.players[0]
-

@@ -1,90 +1,35 @@
+from deck import Player
+from deck import Card
 from deck import Deck
-from deck.player import Player
-from random import choice
+from typing import Dict
 
 
 class AI:
+    end_turn = None
 
-    def __init__(self, player: Player, table):
-        self.player = player
-        self.table = table
-
-    def move(self):
-        hand_deck = self.player.hand_deck
-        up_deck = self.player.up_deck
-        down_deck = self.player.down_deck
-        if self.table.phase == 'start':
-            return self.__swap_cards()
-        if not hand_deck.empty:
-            if self.player.can_deal_deck(hand_deck):
-                return self.__put_on_table(hand_deck)
-        elif not up_deck.empty:
-            if self.player.can_deal_deck(up_deck):
-                return self.__put_on_table(up_deck)
-        else:
-            if self.player.can_deal_deck(down_deck):
-                return self.__put_on_table(down_deck)
-
-        if self.__put_on_table(hand_deck): return True
-        if self.__put_on_table(up_deck): return True
-        if self.__put_on_table(down_deck): return True
-        if self.__play_down_deck(): return True
-        return self.__last_chance()
-
-    def __swap_cards(self):
-        changing = True
-        hand_deck = self.player.hand_deck
-        up_deck = self.player.up_deck
-        while changing:
-            changing = False
-            for hand_card in hand_deck:
-                for up_card in up_deck:
-                    if (hand_card > up_card or hand_card.special) and (not up_card.special):
-                        hand_deck.add_card(up_deck.draw_by_card(up_card))
-                        up_deck.add_card(hand_deck.draw_by_card(hand_card))
-                        changing = True
-                        break
-                if changing:
-                    break
-        return True
-
-    def __last_chance(self):
-        hand_deck = self.player.hand_deck
-        if not self.table.dealer.empty:
-            if last_chance_card := self.table.dealer.draw() >= self.table.discard_pile.last:
-                self.table.discard_pile.add_card(last_chance_card)
-                return True
-            hand_deck.add_card(last_chance_card)
-        hand_deck.add_card(self.table.discard_pile)
-        self.table.discard_pile.clear()
-        return False
-
-    def __put_on_table(self, player_deck: Deck):
-        cards_can_dealt = self.player.can_deal_deck(self.player.hand_deck)
-        if not cards_can_dealt:
+    @classmethod
+    def make_move(cls, game_status: Dict, next_turn):
+        player: Player
+        last_card: Card
+        phase: str
+        started: bool
+        player, last_card, phase, started = game_status.values()
+        if not started:
             return False
-        cards_to_deal = Deck()
-        cards_to_deal.add_card(player_deck.draw_by_card(cards_can_dealt[0]))
-        while True:
-            if cards_can_dealt and Deck().is_same_dict(cards_to_deal[0], cards_can_dealt[0])['value']:
-                cards_to_deal.add_card(player_deck.draw_by_card(cards_can_dealt[0]))
-                self.player.take_cards()
-            else:
-                break
-        self.table.discard_pile.add_card(cards_to_deal)
-        return True
-
-    def __play_down_deck(self):
-        if self.player.hand_deck.count == 0 and \
-                self.player.up_deck.count == 0:
-            pass
-        down_deck = self.player.down_deck
-        hand_deck = self.player.hand_deck
-        table_deck = self.table.discard_pile
-        card = choice(down_deck)
-        if card > self.table.table_deck.last:
-            self.table.add_card(down_deck.draw_by_card(card))
+        if phase == 'start':
+            cls.swap_cards(player)
+            next_turn(game_status['player'])
             return True
-        hand_deck.add_card(down_deck.draw_by_card(card))
-        hand_deck.add_card(table_deck)
-        table_deck.clear()
+
+    @classmethod
+    def swap_cards(cls, player: Player):
+        hand_deck: Deck = player.hand_deck
+        up_deck: Deck = player.up_deck
+        for hand_index, hand_card in enumerate(hand_deck):
+            for up_index, up_card in enumerate(up_deck):
+                if hand_card > up_card or (hand_card.special and not up_card.special):
+                    player.swap_cards_by_id(deck_name1='hand_deck',
+                                            deck_name2='up_deck',
+                                            card1_id=hand_index,
+                                            card2_id=up_index)
+                    return cls.swap_cards(player)
